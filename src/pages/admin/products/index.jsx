@@ -181,18 +181,8 @@ const Products = () => {
             title: 'Image',
             dataIndex: 'Image',            
             key: 'Image',
-            render: (text) => {
-                // const imageUrl = `${import.meta.env.VITE_BACKEND_URL}/uploads/${text}`;
-
-                const fileId = getIdFromUrl(text);
-                const image = `https://drive.google.com/thumbnail?id=${fileId}&sz=w1000`;
-
-                console.log("==> imageUrl: ", text);
-                console.log("==> fileId: ", fileId);
-                console.log("==> image: ", image);
-                
-
-                return <Avatar style={{border: "1px solid navy", backgroundColor: "whitesmoke"}} src={image} shape="square" size={94} icon={<UserOutlined />} />
+            render: (text) => {                                
+                return <Avatar style={{border: "1px solid navy", backgroundColor: "whitesmoke"}} src={text} shape="square" size={94} icon={<UserOutlined />} />
 
                 //  <img src={imageUrl} alt="icon" style={{ width: 50, height: 50 }} />
             },

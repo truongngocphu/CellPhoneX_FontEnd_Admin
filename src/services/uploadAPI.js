@@ -15,16 +15,25 @@ export const uploadImg = (file) => {
     });
 };
 
-// delete hình ảnh drive
-export const deleteImg = (fileId) => {
-    return axios({
-        method: "post",
-        url: `/api/upload/delete`,
-        data: {
-            fileId: fileId,
+export const uploadSliderImgs = (files) => {
+    const formData = new FormData();
+    files.forEach((file) => {
+        formData.append("files", file); // "files" là field trùng với multer
+    });
+
+    return axios.post("/api/upload/uploadSlider", formData, {
+        headers: {
+            "Content-Type": "multipart/form-data",
         },
     });
 };
+
+export const deleteImg = (public_id) => {
+    return axios.post("/api/upload/delete", {
+        public_id,
+    });
+};
+
 
 export const uploadImgMultiple = (files) => {
     const bodyFormData = new FormData();

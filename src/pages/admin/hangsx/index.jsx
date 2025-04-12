@@ -155,7 +155,7 @@ const HangSX = () => {
             <div className="col-lg-11 mb-lg-0 mb-4" style={{margin: "auto"}}>
                 <div className="card z-index-2 h-100">
                 <div className="card-header pb-0 pt-3 bg-transparent" style={{display: "flex", justifyContent: "space-between"}}>
-                    <h6>Hãng SX List</h6>
+                    <h6>Hãng Sản Xuất</h6>
                     <Button size='large' type="primary" icon={<IoMdAdd size={22} />} onClick={() => setOpenCreateHSX(true)}>Create Hãng SX</Button>
                 </div>
                 <div className="card-body p-3">

@@ -81,16 +81,14 @@ const DrawerOrder = (props) => {
         <h4 style={{textAlign: "center", color: "green"}}>THÔNG TIN CHI TIẾT SẢN PHẨM ĐÃ ĐẶT</h4>
         {/* <Divider/> */}
         <br/>
-        {dataDetailOrder?.products?.map(item => {
-            const fileId = getIdFromUrl(item._idSP.Image);
-            const image = `https://drive.google.com/thumbnail?id=${fileId}&sz=w1000`;
+        {dataDetailOrder?.products?.map(item => {           
             return (
                 <>                
                 <Row gutter={[20,15]}>
                     <Col span={24} md={24} style={{display: "flex"}}>
                         <Col span={4}>
                             <Avatar 
-                            src={image} 
+                            src={item._idSP.Image} 
                             shape="square" size={100} icon={<UserOutlined />} />
                         </Col>
                         <Col span={20}>

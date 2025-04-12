@@ -21,7 +21,7 @@ import { TiDeleteOutline } from "react-icons/ti";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchListHangSX } from "../../../redux/HangSX/hangSXSlice";
 import { createProduct } from "../../../services/productAPI";
-import { deleteImg, uploadImg } from "../../../services/uploadAPI";
+import { deleteImg, uploadImg, uploadSliderImgs } from "../../../services/uploadAPI";
 import {
     convertToThumbnailUrls,
     extractDriveFileId,
@@ -62,6 +62,8 @@ const Create = (props) => {
     );
     const dataHangSX = useSelector((state) => state.hangSX.listHangSXs.data);
     console.log("dataHangSX: ", dataHangSX);
+    console.log("====> ảnh nè: imageUrl: ", imageUrl);
+    console.log("====> ảnh slider nè: imageUrl: ", imageUrls);
 
     useEffect(() => {
         dispatch(fetchListHangSX());
@@ -98,9 +100,7 @@ const Create = (props) => {
             TenSP,
             IdHangSX,
             IdLoaiSP,
-            sizes,
-            Image,
-            ImageSlider,
+            sizes,           
             MoTa,
             MoTaChiTiet,
             GiamGiaSP,
@@ -111,14 +111,18 @@ const Create = (props) => {
         const result = GiamGiaSP.match(regex);
         const soGiamGia = parseInt(result[0]);        
 
+        const cleanImageUrls = imageUrls.map((img) =>
+            typeof img === "string" ? img : img.url
+        );
+          
         console.log("==> imageUrls: ", imageUrls);
-        console.log("==> hinhAnh: ", imageUrl);
-        console.log("convertToThumbnailUrls(imageUrls): ", convertToThumbnailUrls(imageUrls));
+        console.log("==> cleanImageUrls: ", cleanImageUrls);
+        console.log("==> imageUrl: ", imageUrl);
+        console.log("==> imageUrl.url: ", imageUrl.url);
 
-        const hinhAnh = imageUrl.split("/").pop(); // Lấy tên file từ URL
-        console.log("Image: ", hinhAnh);
+       
         // Kiểm tra nếu chưa upload ảnh chính
-        if (!imageUrl || imageUrl === "") {
+        if (!imageUrl.url || imageUrl.url === "") {
             notification.error({
                 message: "Lỗi validate",
                 description: "Vui lòng upload hình ảnh chính",
@@ -127,7 +131,7 @@ const Create = (props) => {
         }
 
         // Kiểm tra nếu chưa upload ảnh slider
-        if (!imageUrls || imageUrls.length === 0) {
+        if (!cleanImageUrls || cleanImageUrls.length === 0) {
             notification.error({
                 message: "Lỗi validate",
                 description: "Vui lòng upload hình ảnh Slider",
@@ -141,8 +145,8 @@ const Create = (props) => {
             IdHangSX,
             IdLoaiSP,
             sizes,
-            imageUrl,
-            convertToThumbnailUrls(imageUrls),
+            imageUrl.url,
+            cleanImageUrls,
             MoTa,
             MoTaChiTiet,
             soGiamGia,
@@ -206,8 +210,103 @@ const Create = (props) => {
         form.setFieldsValue({ sizes });
     };
 
-    // upload ảnh chính
+    // upload cloudinary ảnh chính
     const handleUploadFileImage = async ({ file, onSuccess, onError }) => {
+        try {
+            const res = await uploadImg(file);
+        
+            if (!res || !res.data || !res.data.url) {
+                throw new Error("Không có url trong phản hồi từ server.");
+            }
+        
+            const { url, type, public_id } = res.data;
+        
+            // Gán lại cho Ant Design Upload hiển thị ảnh preview
+            file.url = url;
+            file.public_id = public_id; // 👈 Gắn vào file để có thể xóa
+
+            // setImageUrl(url);
+            setImageUrl({ url, public_id });
+
+      
+            onSuccess({
+                url,
+                public_id, // 👈 thêm dòng này để Upload giữ lại
+                type,
+            });
+        } catch (error) {
+            console.error("Lỗi upload:", error);
+            onError(error);
+        }
+    };
+    // upload cloudinary ảnh slider
+    const handleUploadSliderImages = async ({ file, onSuccess, onError }) => {
+        try {
+            const res = await uploadSliderImgs([file]); // upload nhiều file
+    
+            console.log("res upload slider: ", res);
+    
+            if (!res || !res.data || !res.data[0] || !res.data[0].url) {
+                throw new Error("Không có url trong phản hồi từ server.");
+            }
+    
+            const { url, type, public_id } = res.data[0];
+    
+            file.url = url;
+            file.public_id = public_id;
+
+    
+            // ✅ Lưu URL ảnh vào state
+            // setImageUrls((prev) => [...prev, url]);
+            setImageUrls((prev) => [...prev, { url, public_id }]);
+
+    
+            onSuccess({
+                url,
+                public_id, // 👈 bắt buộc phải truyền
+                type,
+            });
+        } catch (error) {
+            console.error("Lỗi upload slider:", error);
+            onError(error);
+        }
+    };
+    // xóa ảnh cloudinary
+    const handleRemoveFile = async (file, type) => {
+        try {
+            const public_id = file.public_id;
+            console.log("public_id: ", public_id);
+            
+    
+            if (public_id) {
+                await deleteImg(public_id); // Gọi API xóa ảnh ở server
+                message.success("Xoá ảnh thành công");
+            }
+    
+            if (type === "thumbnail") {
+                setImageUrl(""); // hoặc setImageUrl(null);
+            }
+    
+            if (type === "slider") {
+                setImageUrls((prev) =>
+                    prev.filter((img) => img.public_id !== public_id)
+                );
+            }
+        } catch (error) {
+            console.error("Lỗi khi xoá ảnh:", error);
+            message.error("Xoá ảnh thất bại");
+        }
+    };
+    
+    
+    
+    
+    
+      
+      
+    
+    // upload driver ảnh chính
+    const handleUploadFileImage1 = async ({ file, onSuccess, onError }) => {
         setLoading(true);
         try {
             const res = await uploadImg(file);
@@ -247,8 +346,8 @@ const Create = (props) => {
         //     setLoading(false);
         // }
     };
-    // Hàm upload ảnh slider
-    const handleUploadSliderImages = async ({ file, onSuccess, onError }) => {
+    // upload driver ảnh slider
+    const handleUploadSliderImages1 = async ({ file, onSuccess, onError }) => {
         setLoading(true);
         try {
             const res = await uploadImg(file);
@@ -266,6 +365,24 @@ const Create = (props) => {
             onError(error);
         } finally {
             setLoading(false);
+        }
+    };
+    // xóa ảnh driver
+    const handleRemoveFile1 = async (file, type) => {
+        const uid = extractDriveThumbnailIdAndSz(imageUrl);
+        const response = await deleteImg(uid);
+        if (type === "thumbnail") {
+            setImageUrl("");
+            message.success(`${file.name} đã được xóa`);
+        }
+        if (type === "slider") {
+            // const newSlider = imageUrls.filter(x => x.uid !== file.uid);
+            const newSlider = imageUrls.filter((url) => url !== file.url); // So sánh theo URL
+            console.log("newSlider: ", newSlider);
+            console.log("file.url: ", file.url);
+
+            setImageUrls(newSlider);
+            message.success(`${file.name} đã được xóa`);
         }
     };
 
@@ -299,23 +416,7 @@ const Create = (props) => {
             setIsImagePreviewVisible(true);
         });
     };
-    const handleRemoveFile = async (file, type) => {
-        const uid = extractDriveThumbnailIdAndSz(imageUrl);
-        const response = await deleteImg(uid);
-        if (type === "thumbnail") {
-            setImageUrl("");
-            message.success(`${file.name} đã được xóa`);
-        }
-        if (type === "slider") {
-            // const newSlider = imageUrls.filter(x => x.uid !== file.uid);
-            const newSlider = imageUrls.filter((url) => url !== file.url); // So sánh theo URL
-            console.log("newSlider: ", newSlider);
-            console.log("file.url: ", file.url);
-
-            setImageUrls(newSlider);
-            message.success(`${file.name} đã được xóa`);
-        }
-    };
+    
     
     return (
         <Modal

@@ -115,9 +115,7 @@ const Category = () => {
             title: 'Icon',
             dataIndex: 'Icon',            
             key: 'Icon',
-            render: (text) => {
-                const fileId = getIdFromUrl(text);
-                const image = `https://drive.google.com/thumbnail?id=${fileId}&sz=w1000`;
+            render: (text) => {                
                 return <Avatar style={{border: "1px solid navy", backgroundColor: "whitesmoke"}} src={text} shape="square" size={64} icon={<UserOutlined />} />
 
                 //  <img src={imageUrl} alt="icon" style={{ width: 50, height: 50 }} />
@@ -128,9 +126,7 @@ const Category = () => {
             title: 'Image',
             dataIndex: 'Image',            
             key: 'Image',
-            render: (text) => {
-                const fileId = getIdFromUrl(text);
-                const image = `https://drive.google.com/thumbnail?id=${fileId}&sz=w1000`;
+            render: (text) => {                
                 return <Avatar style={{border: "1px solid navy", backgroundColor: "whitesmoke"}} src={text} shape="square" size={64} icon={<UserOutlined />} />
 
                 //  <img src={imageUrl} alt="icon" style={{ width: 50, height: 50 }} />

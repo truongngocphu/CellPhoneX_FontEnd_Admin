@@ -58,8 +58,14 @@ const Update = (props) => {
                 // Image: dataUpdateTheLoai.Image,                      
             }
             console.log("init: ", init);
-            setImageUrl(fileList)          
-            setImageUrlAnh(fileListAnh)          
+            setImageUrl({
+                url: dataUpdateTheLoai?.Icon,
+                public_id: "", // hoặc null nếu không có
+            });        
+            setImageUrlAnh({
+                url: dataUpdateTheLoai?.Image,
+                public_id: "", // hoặc null nếu không có
+            }); 
             form.setFieldsValue(init);            
         }
         return () => {
@@ -96,14 +102,9 @@ const Update = (props) => {
             })
             return;
         }
-
-        // const hinhAnh = imageUrl.split('/').pop(); // Lấy tên file từ URL
-        // const hinhAnhAnh = imageUrlAnh.split('/').pop(); // Lấy tên file từ URL
-        // console.log("hinhanh: ", hinhAnh);
-        // console.log("_id: ", _id);
-        
+       
         setIsSubmit(true)
-        const res = await updateTheLoai( _id, TenLoaiSP, imageUrl, imageUrlAnh)
+        const res = await updateTheLoai( _id, TenLoaiSP, imageUrl.url, imageUrlAnh.url)
 
         if(res){
             message.success(res.message);
@@ -120,8 +121,109 @@ const Update = (props) => {
         setIsSubmit(false)
     }
 
+    const handleUploadFileImage = async ({ file, onSuccess, onError }) => {
+        try {
+            const res = await uploadImg(file);
+        
+            if (!res || !res.data || !res.data.url) {
+                throw new Error("Không có url trong phản hồi từ server.");
+            }
+        
+            const { url, type, public_id } = res.data;
+        
+            // Gán lại cho Ant Design Upload hiển thị ảnh preview
+            file.url = url;
+            file.public_id = public_id; // 👈 Gắn vào file để có thể xóa
+
+            // setImageUrl(url);
+            setImageUrl({ url, public_id });
+
+            // ✅ Cập nhật fileList cho Upload để hiển thị ảnh mới
+            setFileList([
+                {
+                    uid: file.uid,
+                    name: file.name,
+                    status: "done",
+                    url: url,
+                    public_id: public_id,
+                },
+            ]);
+        
+            onSuccess({
+                url,
+                public_id, // 👈 thêm dòng này để Upload giữ lại
+                type,
+            });
+        } catch (error) {
+            console.error("Lỗi upload:", error);
+            onError(error);
+        }
+    };
+    const handleUploadFileImageAnh = async ({ file, onSuccess, onError }) => {
+        try {
+            const res = await uploadImg(file);
+        
+            if (!res || !res.data || !res.data.url) {
+                throw new Error("Không có url trong phản hồi từ server.");
+            }
+        
+            const { url, type, public_id } = res.data;
+        
+            // Gán lại cho Ant Design Upload hiển thị ảnh preview
+            file.url = url;
+            file.public_id = public_id; // 👈 Gắn vào file để có thể xóa
+
+            // setImageUrl(url);
+            setImageUrlAnh({ url, public_id });
+
+            // ✅ Cập nhật fileList cho Upload để hiển thị ảnh mới
+            setFileListAnh([
+                {
+                    uid: file.uid,
+                    name: file.name,
+                    status: "done",
+                    url: url,
+                    public_id: public_id,
+                },
+            ]);
+        
+            onSuccess({
+                url,
+                public_id, // 👈 thêm dòng này để Upload giữ lại
+                type,
+            });
+        } catch (error) {
+            console.error("Lỗi upload:", error);
+            onError(error);
+        }
+    };
+    // xóa ảnh cloudinary
+    const handleRemoveFile = async (file, type) => {
+        try {
+            const public_id = file.public_id;
+            console.log("public_id: ", public_id);
+            
+    
+            if (public_id) {
+                await deleteImg(public_id); // Gọi API xóa ảnh ở server
+                message.success("Xoá ảnh thành công");
+            }
+    
+            if (type === "thumbnail") {
+                setImageUrl(""); // hoặc setImageUrl(null);
+            }
+            if (type === "thumbnail2") {
+                setImageUrlAnh(""); // hoặc setImageUrl(null);
+            }
+           
+        } catch (error) {
+            console.error("Lỗi khi xoá ảnh:", error);
+            message.error("Xoá ảnh thất bại");
+        }
+    };
+
     // upload ảnh    
-    const handleUploadFileImage = async ({ file, onSuccess, onError }) => {        
+    const handleUploadFileImage1 = async ({ file, onSuccess, onError }) => {        
         setLoading(true);
         try {
             const res = await uploadImg(file);
@@ -161,7 +263,7 @@ const Update = (props) => {
         }
 
     };
-    const handleUploadFileImageAnh = async ({ file, onSuccess, onError }) => {
+    const handleUploadFileImageAnh1 = async ({ file, onSuccess, onError }) => {
         setLoading(true);
         try {
             const res = await uploadImg(file);
@@ -217,12 +319,12 @@ const Update = (props) => {
         }
     };
 
-    const handleRemoveFile1 = (file) => {
+    const handleRemoveFile2 = (file) => {
         setFileList([]); // Reset fileList khi xóa file
         setImageUrl(''); // Reset URL khi xóa file
         message.success(`${file.name} đã được xóa`);
     };
-    const handleRemoveFile = async (file, type) => {
+    const handleRemoveFile1 = async (file, type) => {
         const uid = extractDriveThumbnailIdAndSz(imageUrl);
         const response = await deleteImg(uid);
         if (type === "thumbnail") {

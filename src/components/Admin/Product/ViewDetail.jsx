@@ -1,15 +1,17 @@
 import { UserOutlined } from "@ant-design/icons";
-import { Avatar, Badge, Collapse, Descriptions, Drawer, Tag } from "antd";
+import { Avatar, Badge, Collapse, Descriptions, Drawer, Skeleton, Tag } from "antd";
 import moment from "moment";
 import { getIdFromUrl } from "../../../utils/constant";
+import { useEffect, useState } from "react";
 const ViewDetail = (props) => {
 
     const {
         openViewSP, setOpenViewSP, dataViewSP, setDataViewSP
     } = props
 
-    const fileId = getIdFromUrl(dataViewSP?.Image);
-    const image = `https://drive.google.com/thumbnail?id=${fileId}&sz=w1000`;
+   
+    const [loading, setLoading] = useState(true);
+    
 
     const items = [
         {
@@ -18,7 +20,7 @@ const ViewDetail = (props) => {
             label: 'Image',
             children: <Avatar 
                         style={{ width: 150, height: 140, objectFit: 'cover', borderRadius: "15%", border: "2px solid navy" }}
-                        src={image}
+                        src={dataViewSP?.Image}
                         shape="square" size={80} icon={<UserOutlined />} />,
         },
         {
@@ -66,24 +68,30 @@ const ViewDetail = (props) => {
             label: 'Ảnh Slider',
             children: (
                 <>
-                  {dataViewSP?.ImageSlider?.map((item, index) => {
-                    const fileId = getIdFromUrl(item);
-                    const image = `https://drive.google.com/thumbnail?id=${fileId}&sz=w1000`;
-            
-                    return (
-                      <Avatar
-                        key={index}
-                        style={{
-                          objectFit: 'cover',
-                          borderRadius: '10%',
-                          border: '1px solid green',
-                          margin: '10px 10px 0 15px'
-                        }}
-                        src={image}
-                        shape="square"
-                        size={100}
-                        icon={<UserOutlined />}
-                      />
+                  {dataViewSP?.ImageSlider?.map((item, index) => {                                
+                    return (                    
+                    <div style={{ display: 'inline-block', margin: '10px 10px 0 15px' }}>
+                        {loading && (
+                            <Skeleton.Avatar
+                            active
+                            shape="square"
+                            size={100}
+                            style={{ borderRadius: '10%', border: '1px solid green' }}
+                            />
+                        )}
+                        <Avatar
+                            src={item}
+                            shape="square"
+                            size={100}
+                            style={{
+                            objectFit: 'cover',
+                            borderRadius: '10%',
+                            border: '1px solid green',
+                            display: loading ? 'none' : 'block',
+                            }}
+                            onLoad={() => setLoading(false)}
+                        />
+                    </div>
                     );
                   })}
                 </>

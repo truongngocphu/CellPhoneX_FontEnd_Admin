@@ -22,6 +22,7 @@ import {
     deleteImg,
     uploadImg,
     uploadImgMultiple,
+    uploadSliderImgs,
 } from "../../../services/uploadAPI";
 import { CKEditor } from "@ckeditor/ckeditor5-react";
 import ClassicEditor from "@ckeditor/ckeditor5-build-classic";
@@ -84,22 +85,19 @@ const Update = (props) => {
                     url: `${dataUpdateSP?.Image}`, // Đường dẫn đến hình ảnh
                 },
             ];
-            console.log("arrThumbnail: ", arrThumbnail);
             setFileList(arrThumbnail); // Set file list cho ảnh chính
 
-            const arrSlider = dataUpdateSP?.ImageSlider?.map((item) => {
+            const arrSlider = dataUpdateSP?.ImageSlider?.map((url, index) => {
                 return {
                     uid: uuidv4(),
-                    name: item, // Tên file
-                    status: "done", // Trạng thái
-                    url: `${item}`, // Đường dẫn ảnh
+                    name: `slider-${index}`,
+                    status: "done",
+                    url: url,
+                    public_id: "", // Nếu không lưu lúc trước thì để trống
                 };
             });
-            console.log("arrSlider: ", arrSlider);
             setFileLists(arrSlider); // Set file list cho ảnh slider
-
-            console.log("fileList: ", fileList);
-            console.log("fileLists: ", fileLists);
+           
 
             const init = {
                 _id: dataUpdateSP._id,
@@ -115,8 +113,17 @@ const Update = (props) => {
                 IdLoaiSP: dataUpdateSP.IdLoaiSP.map((item) => item._id),
             };
             console.log("init: ", init);
-            setImageUrl(arrThumbnail);
-            setImageUrls(arrSlider);
+            setImageUrl({
+                url: dataUpdateSP?.Image,
+                public_id: "", // hoặc null nếu không có
+            });            
+            setImageUrls(
+                dataUpdateSP?.ImageSlider?.map((url) => ({
+                    url,
+                    public_id: "", // hoặc null nếu chưa lưu
+                }))
+            );
+            
             form.setFieldsValue(init);
 
             // Lấy các thể loại tương ứng với hãng sản xuất (IdHangSX)
@@ -184,26 +191,46 @@ const Update = (props) => {
 
         const regex = /(\d+)/; // Tìm số trong chuỗi
         const result = GiamGiaSP.match(regex);
-        const soGiamGia = parseInt(result[0]);
-        console.log("_id: ", _id);
-        console.log("TenSP: ", TenSP);
-        console.log("GiamGiaSP: ", soGiamGia);
-        console.log("IdHangSX: ", IdHangSX);
-        console.log("IdLoaiSP: ", IdLoaiSP);
-        console.log("sizes: ", sizes);
-        console.log("MoTa: ", MoTa);
-        console.log("MoTaChiTiet: ", MoTaChiTiet);
+        const soGiamGia = parseInt(result[0]);        
 
         console.log("--> fileLists: ", fileLists);
 
-        const x = fileList?.map((item) => item.name) || [];
-        const hinhAnh = x.join(", ");
-        console.log("Image: ", hinhAnh);
-        const hinhAnhSlider = fileLists?.map((item) => item.name) || [];
-        console.log("hinhAnhSlider: ", hinhAnhSlider);
+        // const x = fileList?.map((item) => item.name) || [];
+        // const hinhAnh = x.join(", ");
+        // console.log("Image: ", hinhAnh);
+        // const hinhAnhSlider = fileLists?.map((item) => item.name) || [];
+        // console.log("hinhAnhSlider: ", hinhAnhSlider);
 
+        // // Kiểm tra nếu chưa upload ảnh chính
+        // if (!imageUrl || imageUrl.length === 0) {
+        //     notification.error({
+        //         message: "Lỗi validate",
+        //         description: "Vui lòng upload hình ảnh chính",
+        //     });
+        //     return;
+        // }
+
+        // // Kiểm tra nếu chưa upload ảnh slider
+        // if (!imageUrls || imageUrls.length === 0) {
+        //     notification.error({
+        //         message: "Lỗi validate",
+        //         description: "Vui lòng upload hình ảnh Slider",
+        //     });
+        //     return;
+        // }
+
+        const cleanImageUrls = imageUrls.map((img) =>
+            typeof img === "string" ? img : img.url
+        );
+            
+        console.log("==> imageUrls: ", imageUrls);
+        console.log("==> cleanImageUrls: ", cleanImageUrls);
+        console.log("==> imageUrl: ", imageUrl);
+        console.log("==> imageUrl.url: ", imageUrl.url);
+
+        
         // Kiểm tra nếu chưa upload ảnh chính
-        if (!imageUrl || imageUrl.length === 0) {
+        if (!imageUrl.url || imageUrl.url === "") {
             notification.error({
                 message: "Lỗi validate",
                 description: "Vui lòng upload hình ảnh chính",
@@ -212,13 +239,13 @@ const Update = (props) => {
         }
 
         // Kiểm tra nếu chưa upload ảnh slider
-        if (!imageUrls || imageUrls.length === 0) {
+        if (!cleanImageUrls || cleanImageUrls.length === 0) {
             notification.error({
                 message: "Lỗi validate",
                 description: "Vui lòng upload hình ảnh Slider",
             });
             return;
-        }
+        }  
 
         setIsSubmit(true);
         const res = await updateProduct(
@@ -227,8 +254,8 @@ const Update = (props) => {
             IdHangSX,
             IdLoaiSP,
             sizes,
-            hinhAnh,
-            hinhAnhSlider,
+            imageUrl.url,
+            cleanImageUrls,
             MoTa,
             MoTaChiTiet,
             soGiamGia,
@@ -291,9 +318,119 @@ const Update = (props) => {
         sizes.splice(index, 1);
         form.setFieldsValue({ sizes });
     };
+    // -----------------------------
+    // upload cloudinary ảnh chính
+    const handleUploadFileImage = async ({ file, onSuccess, onError }) => {
+        try {
+            const res = await uploadImg(file);
+        
+            if (!res || !res.data || !res.data.url) {
+                throw new Error("Không có url trong phản hồi từ server.");
+            }
+        
+            const { url, type, public_id } = res.data;
+        
+            // Gán lại cho Ant Design Upload hiển thị ảnh preview
+            file.url = url;
+            file.public_id = public_id; // 👈 Gắn vào file để có thể xóa
+
+            // setImageUrl(url);
+            setImageUrl({ url, public_id });
+
+            // ✅ Cập nhật fileList cho Upload để hiển thị ảnh mới
+            setFileList([
+                {
+                    uid: file.uid,
+                    name: file.name,
+                    status: "done",
+                    url: url,
+                    public_id: public_id,
+                },
+            ]);
+        
+            onSuccess({
+                url,
+                public_id, // 👈 thêm dòng này để Upload giữ lại
+                type,
+            });
+        } catch (error) {
+            console.error("Lỗi upload:", error);
+            onError(error);
+        }
+    };
+    // upload cloudinary ảnh slider
+    const handleUploadSliderImages = async ({ file, onSuccess, onError }) => {
+        try {
+            const res = await uploadSliderImgs([file]); // upload nhiều file
+    
+            console.log("res upload slider: ", res);
+    
+            if (!res || !res.data || !res.data[0] || !res.data[0].url) {
+                throw new Error("Không có url trong phản hồi từ server.");
+            }
+    
+            const { url, type, public_id } = res.data[0];
+    
+            file.url = url;
+            file.public_id = public_id;
+
+    
+            // ✅ Lưu URL ảnh vào state
+            // setImageUrls((prev) => [...prev, url]);
+            setImageUrls((prev) => [...prev, { url, public_id }]);
+
+            // ✅ Cập nhật fileList để hiển thị trong UI Upload
+            setFileLists((prev) => [
+                ...prev,
+                {
+                    uid: file.uid,
+                    name: file.name,
+                    status: "done",
+                    url,
+                    public_id,
+                },
+            ]);
+    
+            onSuccess({
+                url,
+                public_id, // 👈 bắt buộc phải truyền
+                type,
+            });
+        } catch (error) {
+            console.error("Lỗi upload slider:", error);
+            onError(error);
+        }
+    };
+    // xóa ảnh cloudinary
+    const handleRemoveFile = async (file, type) => {
+        try {
+            const public_id = file.public_id;
+            console.log("public_id: ", public_id);
+            
+    
+            if (public_id) {
+                await deleteImg(public_id); // Gọi API xóa ảnh ở server
+                message.success("Xoá ảnh thành công");
+            }
+    
+            if (type === "thumbnail") {
+                setImageUrl(""); // hoặc setImageUrl(null);
+            }
+    
+            if (type === "slider") {
+                setImageUrls((prev) =>
+                    prev.filter((img) => img.public_id !== public_id)
+                );
+            }
+        } catch (error) {
+            console.error("Lỗi khi xoá ảnh:", error);
+            message.error("Xoá ảnh thất bại");
+        }
+    };
+    // -----------------------------
 
     // upload ảnh chính
-    const handleUploadFileImage = async ({ file, onSuccess, onError }) => {
+    const handleUploadFileImage1 = async ({ file, onSuccess, onError }) => {
         setLoading(true);
         try {
             const res = await uploadImg(file);
@@ -333,7 +470,7 @@ const Update = (props) => {
         }
     };
     // Hàm upload ảnh slider
-    const handleUploadSliderImages = async ({ file, onSuccess, onError }) => {
+    const handleUploadSliderImages1 = async ({ file, onSuccess, onError }) => {
         setLoading(true);
         try {
             const res = await uploadImg(file);
@@ -377,36 +514,34 @@ const Update = (props) => {
             setLoading(false);
         }
     };
+    const handleRemoveFile1 = async (file, type) => {
+        const uid = extractDriveThumbnailIdAndSz(file.url);
+        const response = await deleteImg(uid);
 
-    const handleUploadSliderImages1 = async ({ file, onSuccess, onError }) => {
-        setLoading(true);
-        try {
-            const res = await uploadImg(file);
-            console.log("file: ", file);
-            console.log("res upload ảnh slider: ", res);
-            if (res) {
-                setImageUrls((prevUrls) => [...prevUrls, res.url]); // Thêm URL vào mảng imageUrls
-                file.url = res.url;
-                onSuccess(file);
-                // Cập nhật fileList hiện tại, thay vì thay thế hoàn toàn
-                setFileLists((prevFileLists) => [
-                    ...prevFileLists, // Giữ lại các ảnh đã có
-                    {
-                        uid: file.uid,
-                        name: file.name,
-                        status: "done",
-                        url: res.url, // URL của hình ảnh mới
-                    },
-                ]);
-            } else {
-                onError("Đã có lỗi khi upload file");
-            }
-        } catch (error) {
-            console.error(error);
-            message.error("Upload thất bại");
-            onError(error);
-        } finally {
-            setLoading(false);
+        if (type === "thumbnail") {
+            setImageUrl([]);
+            setFileList([]);
+            message.success(`${file.name} đã được xóa`);
+        }
+        if (type === "slider") {
+            // Lọc các ảnh trong imageUrls để xóa ảnh có URL tương ứng
+            const newSlider = imageUrls.filter((item) => item.uid !== file.uid);
+            console.log("newSlider: ", newSlider);
+            console.log("file.url: ", file.url);
+
+            // Cập nhật lại imageUrls sau khi xóa
+            setImageUrls(newSlider);
+
+            // Lọc các ảnh trong fileLists để xóa ảnh có UID tương ứng
+            const newFileLists = fileLists.filter(
+                (item) => item.uid !== file.uid
+            );
+            console.log("newFileLists: ", newFileLists);
+
+            // Cập nhật lại fileLists sau khi xóa
+            setFileLists(newFileLists);
+
+            message.success(`${file.name} đã được xóa`);
         }
     };
 
@@ -438,36 +573,7 @@ const Update = (props) => {
         }
     };
 
-    const handleRemoveFile = async (file, type) => {
-        const uid = extractDriveThumbnailIdAndSz(file.url);
-        const response = await deleteImg(uid);
-
-        if (type === "thumbnail") {
-            setImageUrl([]);
-            setFileList([]);
-            message.success(`${file.name} đã được xóa`);
-        }
-        if (type === "slider") {
-            // Lọc các ảnh trong imageUrls để xóa ảnh có URL tương ứng
-            const newSlider = imageUrls.filter((item) => item.uid !== file.uid);
-            console.log("newSlider: ", newSlider);
-            console.log("file.url: ", file.url);
-
-            // Cập nhật lại imageUrls sau khi xóa
-            setImageUrls(newSlider);
-
-            // Lọc các ảnh trong fileLists để xóa ảnh có UID tương ứng
-            const newFileLists = fileLists.filter(
-                (item) => item.uid !== file.uid
-            );
-            console.log("newFileLists: ", newFileLists);
-
-            // Cập nhật lại fileLists sau khi xóa
-            setFileLists(newFileLists);
-
-            message.success(`${file.name} đã được xóa`);
-        }
-    };
+    
 
     console.log("fileList: ", fileList);
     console.log("fileLists: ", fileLists);
