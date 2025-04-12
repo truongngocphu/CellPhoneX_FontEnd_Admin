@@ -46,7 +46,7 @@ const MenuLeft = () => {
               <i className="fas fa-times p-3 cursor-pointer text-secondary opacity-5 position-absolute end-0 top-0 d-none d-xl-none" aria-hidden="true" id="iconSidenav" />
               <a className="navbar-brand m-0" href="/admin" target="_blank">
                 <img src={imgLogo} width="26px" height="26px" className="navbar-brand-img h-100" alt="main_logo" /> &nbsp;
-                <span className="ms-1 font-weight-bold text-danger">Shop NA KT</span>
+                <span className="ms-1 font-weight-bold text-danger">Admin_CellPhoneX</span>
               </a>
             </div>
             <hr className="horizontal dark mt-0" />
@@ -160,7 +160,7 @@ const MenuLeft = () => {
                       <i className="ni ni-single-02 text-dark text-sm opacity-10" />
                     </div> */}
                     <IoLogoAppleAppstore size={22} style={{color: "green"}} /> &nbsp;&nbsp;&nbsp;
-                    <a href="https://shopbandodientu.dokhactu.site/" target='_blank'>
+                    <a href="/" target='_blank'>
                     <span className="nav-link-text ms-1" style={{color: "green"}}>Đi tới trang chủ bán hàng </span>
                     </a>
                   </a>
