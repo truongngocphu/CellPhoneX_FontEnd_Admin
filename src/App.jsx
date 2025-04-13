@@ -13,7 +13,6 @@ import HistoryCart from "./pages/admin/historyCart";
 import NhanVienPage from "./pages/admin/nhanvien";
 import HopQua from "./pages/admin/hopQua";
 import CauHoi from "./pages/admin/cauhoi";
-import ThueGameVaLienHe from "./pages/admin/thueGameVaLienHe";
 
 export default function App() {
     const router = createBrowserRouter([
@@ -99,14 +98,7 @@ export default function App() {
                         </ProtectedRoute>
                     ),
                 },
-                {
-                    path: "thuegamevalienhe",
-                    element: (
-                        <ProtectedRoute>
-                            <ThueGameVaLienHe />
-                        </ProtectedRoute>
-                    ),
-                },
+                
                 {
                     path: "historycart",
                     element: (
